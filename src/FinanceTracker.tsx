@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 
 interface Transaction {
@@ -17,6 +17,8 @@ interface TransactionInput {
   category: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 const FinanceTracker: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [newTransaction, setNewTransaction] = useState<TransactionInput>({
@@ -26,27 +28,50 @@ const FinanceTracker: React.FC = () => {
     category: 'other'
   });
 
-  const addTransaction = (e: React.FormEvent) => {
+  // Carregar transações
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/transactions`);
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error('Erro ao carregar transações:', error);
+    }
+  };
+
+  const addTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(newTransaction.amount);
     if (!newTransaction.description || isNaN(amount)) return;
 
-    setTransactions([
-      ...transactions,
-      {
-        ...newTransaction,
-        id: Date.now(),
-        amount: newTransaction.type === 'expense' ? -amount : amount,
-        date: new Date().toISOString()
-      }
-    ]);
+    try {
+      const response = await fetch(`${API_URL}/api/transactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...newTransaction,
+          amount: newTransaction.type === 'expense' ? -amount : amount,
+        }),
+      });
 
-    setNewTransaction({
-      description: '',
-      amount: '',
-      type: 'expense',
-      category: 'other'
-    });
+      const savedTransaction = await response.json();
+      setTransactions([savedTransaction, ...transactions]);
+
+      setNewTransaction({
+        description: '',
+        amount: '',
+        type: 'expense',
+        category: 'other'
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar transação:', error);
+    }
   };
 
   const getBalance = (): number => {
