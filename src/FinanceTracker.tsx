@@ -1,16 +1,32 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 
-const FinanceTracker = () => {
-  const [transactions, setTransactions] = useState([]);
-  const [newTransaction, setNewTransaction] = useState({
+interface Transaction {
+  id: number;
+  description: string;
+  amount: number;
+  type: 'expense' | 'income';
+  category: string;
+  date: string;
+}
+
+interface TransactionInput {
+  description: string;
+  amount: string;
+  type: 'expense' | 'income';
+  category: string;
+}
+
+const FinanceTracker: React.FC = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [newTransaction, setNewTransaction] = useState<TransactionInput>({
     description: '',
     amount: '',
     type: 'expense',
     category: 'other'
   });
 
-  const addTransaction = (e) => {
+  const addTransaction = (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(newTransaction.amount);
     if (!newTransaction.description || isNaN(amount)) return;
@@ -33,7 +49,7 @@ const FinanceTracker = () => {
     });
   };
 
-  const getBalance = () => {
+  const getBalance = (): number => {
     return transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
   };
 
@@ -68,7 +84,7 @@ const FinanceTracker = () => {
             <select
               className="w-full p-2 border rounded"
               value={newTransaction.type}
-              onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
+              onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value as 'expense' | 'income'})}
             >
               <option value="expense">Despesa</option>
               <option value="income">Receita</option>
